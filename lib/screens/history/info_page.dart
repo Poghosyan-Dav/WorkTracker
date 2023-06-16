@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:convert';
@@ -11,6 +13,7 @@ import '../../date_range/date_range_bottom_sheet_modal.dart';
 import '../../services/blocs/user/user_bloc.dart';
 import '../../services/models/user.dart';
 import '../../services/models/user_info.dart';
+import '../../widget/delete_user_dialog.dart';
 import 'history_info_screen.dart';
 
 class MyPage extends StatefulWidget {
@@ -28,7 +31,10 @@ class _MyPageState extends State<MyPage> {
   final DateTime now = DateTime. now();
   final DateFormat formatter = DateFormat("yyyy-MM-ddT00:00:00");
   late final String date;
+  final _userDataProvider = UserDataProvider();
 
+  HashSet<Datum> selectedItem = HashSet();
+  bool isMultiSelectionEnabled = false;
   bool _hasDate = false;
   Map<String,String> _date={};
   final String _currentAddress ='';
@@ -63,9 +69,34 @@ class _MyPageState extends State<MyPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('History'),
+        leading: isMultiSelectionEnabled
+            ? IconButton(
+            onPressed: () {
+              selectedItem.clear();
+              isMultiSelectionEnabled = false;
+              setState(() {});
+            },
+            icon: Icon(Icons.close))
+            : null,
+        title: Text(isMultiSelectionEnabled
+            ? getSelectedItemCount()
+            : "History"),
         backgroundColor: Colors.blueAccent,
         actions: [
+          Visibility(
+              visible: selectedItem.isNotEmpty,
+              child: IconButton(
+                icon: Icon(Icons.delete),
+                onPressed: () {
+                  selectedItem.forEach((user) {
+                    data.remove(user);
+                  });
+
+                  _userDataProvider.deleteHistoryCard(selectedItem.map((e) => e.userId).toList());
+                  selectedItem.clear();
+                  setState(() {});
+                },
+              )),
           PopupMenuButton<int>(
             onSelected: (item) => handleClick(item),
             itemBuilder: (context) => [
@@ -96,55 +127,74 @@ class _MyPageState extends State<MyPage> {
                     var user = data[index] as Datum;
 
                     return GestureDetector(
-                      onTap: ()=>_openInfoWidthMap(context,user  ,true),
+                      onLongPress: (){
+                        isMultiSelectionEnabled = true;
+                        doMultiSelection(user);
+                      },
+                      onTap: ()=> isMultiSelectionEnabled ? doMultiSelection(user): _openInfoWidthMap(context,user  ,true),
                     child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Card(
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 8),
-                                Text('First Name: ${user.user?.firstName ?? '' }'),
-                                const SizedBox(height: 16),
-                                Text('Last Name: ${user.user?.lastName ?? '' }'),
-                                const SizedBox(height: 16),
-                                Text('Date: ${DateFormat('yyyy-MM-dd').format(DateTime.parse('${user.date}'))}'),
-                                const SizedBox(height: 16),
-                                Text('Duration: ${user.duration}'),
-                                const SizedBox(height: 16),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text('Times:'),
-                                    if(user.times != null) for (var time in user!.times!.take(2))
-                                      Padding(
-                                        padding: const EdgeInsets.only(left: 16.0),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('Start: ${time.start}'),
-                                            const SizedBox(height: 8),
-                                            Text('End: ${time.end}'),
-                                            const SizedBox(height: 16),
-                                          ],
+                          child: Stack(children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 8),
+                                  Text('First Name: ${user.user?.firstName ?? '' }'),
+                                  const SizedBox(height: 16),
+                                  Text('Last Name: ${user.user?.lastName ?? '' }'),
+                                  const SizedBox(height: 16),
+                                  Text('Date: ${DateFormat('yyyy-MM-dd').format(DateTime.parse('${user.date}'))}'),
+                                  const SizedBox(height: 16),
+                                  Text('Duration: ${user.duration}'),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Times:'),
+                                      if(user.times != null) for (var time in user!.times!.take(2))
+                                        Padding(
+                                          padding: const EdgeInsets.only(left: 16.0),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text('Start: ${time.start}'),
+                                              const SizedBox(height: 8),
+                                              Text('End: ${time.end}'),
+                                              const SizedBox(height: 16),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    if (user.times != null && user.times!.length > 2)
-                                      const Padding(
-                                        padding:  EdgeInsets.only(left: 16.0,top: 20),
-                                        child: Align(
-                                            alignment:Alignment.bottomRight,
-                                            child: Text('...',textAlign: TextAlign.right,style: TextStyle(fontSize: 16),)),
-                                      ),
+                                      if (user.times != null && user.times!.length > 2)
+                                        const Padding(
+                                          padding:  EdgeInsets.only(left: 16.0,top: 20),
+                                          child: Align(
+                                              alignment:Alignment.bottomRight,
+                                              child: Text('...',textAlign: TextAlign.right,style: TextStyle(fontSize: 16),)),
+                                        ),
 
-                                  ],
-                                ),
+                                    ],
+                                  ),
 
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
+                            Align(
+                              alignment: Alignment.topRight,
+                              child: Visibility(
+                                  visible: isMultiSelectionEnabled,
+                                  child: Icon(
+                                    selectedItem.contains(user)
+                                        ? Icons.check_circle
+                                        : Icons.radio_button_unchecked,
+                                    size: 30,
+                                    color: Colors.red,
+                                  )),
+                            ),
+
+                          ],),
                         ),
                       ),
                     );
@@ -192,7 +242,28 @@ class _MyPageState extends State<MyPage> {
       ),
     );
   }
+  void _onDelete({required List<User> users,required int index,required List<int>  ids})async{
 
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return DeleteUserDialog(userId: ids[index],onDeleted: ()async{
+          final bool value = await _userDataProvider.deleteHistoryCard(ids);
+          if (value) {
+            users.removeAt(index);
+            _pullRefresh();
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("User Deleted!")),
+              );
+              Navigator.pop(context);
+            }
+          }
+
+        },);
+      },
+    );
+  }
   void handleClick(int item) {
     switch (item){
       case 0:
@@ -200,10 +271,30 @@ class _MyPageState extends State<MyPage> {
         break;
     }
   }
+  String getSelectedItemCount() {
+    return selectedItem.isNotEmpty
+        ? selectedItem.length.toString() + " item selected"
+        : "No item selected";
+  }
+
+  void doMultiSelection(Datum nature) {
+    if (isMultiSelectionEnabled) {
+      if (selectedItem.contains(nature)) {
+        selectedItem.remove(nature);
+      } else {
+        selectedItem.add(nature);
+      }
+      setState(() {});
+    } else {
+      //Other logic
+    }
+  }
+
   Future<void> _pullRefresh() async {
     fetchData();
 
   }
+
   bool _onDateRangeAdd(){
 
     showModalBottomSheet(

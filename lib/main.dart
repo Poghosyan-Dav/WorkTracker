@@ -266,21 +266,40 @@ class HomeScreenState extends State<HomeScreen> {
 
 
   Future<Widget> loginUser() async {
-    final isValid = await _sessionDataProvider.readsAccessToken() ?? '';
-    final isAUser = await _sessionDataProvider.readRole() ?? ' ';
-
-    if (isValid.isNotEmpty && isAUser.contains('true')) {
+    final isValid = await _sessionDataProvider.readsAccessToken();
+    final isAUser = await _sessionDataProvider.readRole() ?? '';
+    final bool tokenIsExpired = await hasToken();
+    if (isValid != null  && isAUser.contains('true') && tokenIsExpired) {
       return const UserScreen();
     }
 
-    if (isValid.isNotEmpty && isAUser.contains('false')) {
+    if (isValid != null && isAUser.contains('false') && tokenIsExpired) {
       return const UsersScreen();
     }
 
     return const LoginScreen();
   }
 
-
+  Future<bool> hasToken() async {
+    final token = await _sessionDataProvider.readsAccessToken();
+    if (token != null) {
+      // Check if the token has expired
+      Map<String, dynamic> decodedToken = json.decode(
+          ascii.decode(
+              base64.decode(base64.normalize(token.split(".")[1]))
+          )
+      );
+      if (DateTime.fromMillisecondsSinceEpoch(decodedToken['exp'] * 1000).isBefore(DateTime.now())) {
+        // Token has expired, log the user out
+        await _sessionDataProvider.deleteAllToken();
+        return false;
+      }
+      // Token is valid, the user is logged in
+      return true;
+    }
+    // Token not found, the user is not logged in
+    return false;
+  }
   @override
   Widget build(BuildContext context) {
     return WithForegroundTask(

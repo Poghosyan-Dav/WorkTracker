@@ -15,6 +15,7 @@ class Api {
   //Admin api
       //User api
       static String get getAllUsers => '$apiUrl/users';
+      static String get deleteUsersFromHistory => '$apiUrl/info/delete';
       static String getUser(String id) => '$apiUrl/users/$id';
       static String deleteUser(int id) => '$apiUrl/users/$id';
 

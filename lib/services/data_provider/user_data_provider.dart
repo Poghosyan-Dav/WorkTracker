@@ -417,6 +417,37 @@ class UserDataProvider {
       }
       return users;
     }
+  Future<bool> deleteHistoryCard(List<int?> items) async {
+    Map<String,List<int?>> data = {
+      'ids': items
+    };
+    try {
+      var response = await http.post(
+        Uri.parse(Api.deleteUsersFromHistory),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(data),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else if (isAccesTokenTimerActive || response.statusCode == 401) {
+        bool isTrue = await refresh();
+
+        if (isTrue) {
+          return await deleteHistoryCard(items); // Call saveFavorite recursively after refreshing token
+        } else {
+          return false;
+        }
+      }else {
+        debugPrint('Delete ');
+        return false;
+      }
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
   Future<bool> deleteUser(int id) async {
     try {
       var response = await http.delete(

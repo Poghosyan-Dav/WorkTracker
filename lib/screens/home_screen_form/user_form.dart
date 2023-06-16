@@ -144,7 +144,7 @@ class _UserScreenState extends State<UserScreen> {
       final dateNow = DateTime.now();
       final difference = parsedWorkTime.difference(dateNow).inMilliseconds;
       _stopWatchTimer.setPresetTime(mSec: difference.abs());
-      _startTimer();
+      _checkPermission();
     }
   }
   _removeData() async {
@@ -261,6 +261,39 @@ class _UserScreenState extends State<UserScreen> {
         ]
     )
     ;
+  }
+  Future<void> _checkPermission() async {
+    await _getCurrentPosition();
+
+    if (!_isLocationEnabled) {
+      return;
+    }
+
+    if (!await FlutterForegroundTask.canDrawOverlays) {
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Permission Required'),
+            content: const Text(
+              'The app needs the SYSTEM_ALERT_WINDOW permission to function properly. Please grant the permission in the app settings.',
+            ),
+            actions: [
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        ).then((value) => FlutterForegroundTask.openSystemAlertWindowSettings());
+      }
+
+      return;
+    }
+
+    await HomeScreenState().startForegroundTask();
+    _saveData();
+    _stopWatchTimer.onStartTimer();
   }
 
   Future<void> _startTimer() async {
