@@ -64,6 +64,31 @@ class _MyPageState extends State<MyPage> {
     fetchData();
   }
 
+  void _onDelete()async{
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return DeleteUserDialog(
+          isFromUserCardForm: false,
+          onDeleted: () async {
+          final bool value = await _userDataProvider.deleteHistoryCard(selectedItem.map((e) => e.userId).toList());
+          if (value) {
+            selectedItem.clear();
+            _pullRefresh();
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("User Deleted!")),
+              );
+              Navigator.pop(context);
+            }
+          }
+
+        },);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -88,12 +113,7 @@ class _MyPageState extends State<MyPage> {
               child: IconButton(
                 icon: Icon(Icons.delete),
                 onPressed: () {
-                  selectedItem.forEach((user) {
-                    data.remove(user);
-                  });
-
-                  _userDataProvider.deleteHistoryCard(selectedItem.map((e) => e.userId).toList());
-                  selectedItem.clear();
+                  _onDelete();
                   setState(() {});
                 },
               )),
@@ -125,7 +145,6 @@ class _MyPageState extends State<MyPage> {
                     }
                   } else {
                     var user = data[index] as Datum;
-
                     return GestureDetector(
                       onLongPress: (){
                         isMultiSelectionEnabled = true;
@@ -190,7 +209,7 @@ class _MyPageState extends State<MyPage> {
                                         ? Icons.check_circle
                                         : Icons.radio_button_unchecked,
                                     size: 30,
-                                    color: Colors.red,
+                                    color: Colors.blue,
                                   )),
                             ),
 
@@ -240,28 +259,6 @@ class _MyPageState extends State<MyPage> {
           ),
         ],
       ),
-    );
-  }
-  void _onDelete({required List<User> users,required int index,required List<int>  ids})async{
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return DeleteUserDialog(userId: ids[index],onDeleted: ()async{
-          final bool value = await _userDataProvider.deleteHistoryCard(ids);
-          if (value) {
-            users.removeAt(index);
-            _pullRefresh();
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("User Deleted!")),
-              );
-              Navigator.pop(context);
-            }
-          }
-
-        },);
-      },
     );
   }
   void handleClick(int item) {

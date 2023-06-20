@@ -59,7 +59,9 @@ void _onDelete({required List<User> users,required int index,required int userId
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return DeleteUserDialog(userId: userId,onDeleted: ()async{
+        return DeleteUserDialog(
+
+          onDeleted: ()async{
           final bool value = await _userDataProvider.deleteUser(userId);
           if (value) {
             users.removeAt(index);
@@ -72,7 +74,7 @@ void _onDelete({required List<User> users,required int index,required int userId
             }
           }
 
-        },);
+        }, isFromUserCardForm: true,);
       },
     );
 }
