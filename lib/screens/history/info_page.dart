@@ -1,18 +1,13 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:worktracker/screens/edit_screen/edit_info_screen.dart';
 import 'package:worktracker/services/data_provider/user_data_provider.dart';
 import 'package:worktracker/services/models/info.dart';
 
 import '../../date_range/date_range_bottom_sheet_modal.dart';
-import '../../services/blocs/user/user_bloc.dart';
-import '../../services/models/user.dart';
-import '../../services/models/user_info.dart';
 import '../../widget/delete_user_dialog.dart';
 import 'history_info_screen.dart';
 
@@ -78,7 +73,7 @@ class _MyPageState extends State<MyPage> {
             _pullRefresh();
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("User Deleted!")),
+                const SnackBar(content: Text("Deleted!")),
               );
               Navigator.pop(context);
             }

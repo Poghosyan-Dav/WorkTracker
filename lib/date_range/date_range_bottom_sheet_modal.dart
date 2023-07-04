@@ -88,7 +88,7 @@ try{
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close)),
-                        const Text('Select date range', style: TextStyle(fontFamily: 'Roboto', fontSize: 20.0, fontWeight: FontWeight.w500),),
+                        const Text('Select date', style: TextStyle(fontFamily: 'Roboto', fontSize: 20.0, fontWeight: FontWeight.w500),),
                         const Spacer(),
                         TextButton(
                             onPressed:(){
