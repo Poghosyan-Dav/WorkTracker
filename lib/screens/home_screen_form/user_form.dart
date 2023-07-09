@@ -88,7 +88,7 @@ class _UserScreenState extends State<UserScreen> {
       if(context.mounted){
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text(
-                'Location services are disabled. Please enable the services')));
+                'For the timer to work, you need to enable location services in order to track the working time. Please enable services')));
       }
 
       return false;
