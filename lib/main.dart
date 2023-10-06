@@ -1,7 +1,7 @@
 
 
 
-
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
@@ -27,9 +27,6 @@ import 'services/data_provider/session_data_providers.dart';
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    debugPrint('App was detached!');
-  });
   initialization();
   runApp(const WorkTrackerApp());
 }
@@ -95,7 +92,7 @@ class MyTaskHandler extends TaskHandler {
   }
 
   @override
-  Future<void> onEvent(DateTime timestamp, SendPort? sendPort) async {
+  Future<void> onRepeatEvent(DateTime timestamp, SendPort? sendPort) async {
     String formattedTimestamp =
     DateFormat('yyyy-MM-dd HH:mm:ss').format(timestamp);
 
@@ -221,6 +218,39 @@ class HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+  Future<void> _requestPermissionForAndroid() async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+
+    // "android.permission.SYSTEM_ALERT_WINDOW" permission must be granted for
+    // onNotificationPressed function to be called.
+    //
+    // When the notification is pressed while permission is denied,
+    // the onNotificationPressed function is not called and the app opens.
+    //
+    // If you do not use the onNotificationPressed or launchApp function,
+    // you do not need to write this code.
+    if (!await FlutterForegroundTask.canDrawOverlays) {
+      // This function requires `android.permission.SYSTEM_ALERT_WINDOW` permission.
+      await FlutterForegroundTask.openSystemAlertWindowSettings();
+    }
+
+    // Android 12 or higher, there are restrictions on starting a foreground service.
+    //
+    // To restart the service on device reboot or unexpected problem, you need to allow below permission.
+    if (!await FlutterForegroundTask.isIgnoringBatteryOptimizations) {
+      // This function requires `android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` permission.
+      await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+    }
+
+    // Android 13 and higher, you need to allow notification permission to expose foreground service notification.
+    final NotificationPermission notificationPermissionStatus =
+    await FlutterForegroundTask.checkNotificationPermission();
+    if (notificationPermissionStatus != NotificationPermission.granted) {
+      await FlutterForegroundTask.requestNotificationPermission();
+    }
+  }
 
   Future<bool> startForegroundTask() async {
     // "android.permission.SYSTEM_ALERT_WINDOW" permission must be granted for
@@ -259,7 +289,11 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
-    _initForegroundTask();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      debugPrint('App was detached!');
+      await _requestPermissionForAndroid();
+      _initForegroundTask();
+    });
     loginUser();
     super.initState();
   }

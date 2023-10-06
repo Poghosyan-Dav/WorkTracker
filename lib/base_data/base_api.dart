@@ -1,4 +1,4 @@
-const String baseUrl = 'http://165.227.204.177';
+const String baseUrl = 'https://phplaravel-1129724-3949044.cloudwaysapps.com';
 const apiUrl = '$baseUrl/api';
 
 
