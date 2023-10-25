@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,6 +17,7 @@ import 'package:worktracker/services/data_provider/session_data_providers.dart';
 import 'package:worktracker/services/data_provider/users_info_api.dart';
 import 'package:worktracker/services/models/user_actions.dart';
 import 'package:app_settings/app_settings.dart';
+import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 
 import '../../main.dart';
 import '../../services/blocs/login/login_bloc.dart';
@@ -102,55 +104,7 @@ class _UserScreenState extends State<UserScreen> with WidgetsBindingObserver {
      _isLocationEnabled = isLocationEnabled;
     }
   }
-  void showSomething() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Location Permission Permanently Denied4'),
-          content: Text('Location permission has been permanently denied. Please go to the app settings and enable location permission to use this feature.'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                AppSettings.openAppSettings(type: AppSettingsType.location);
 
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-  void showLocationDisclosure() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Location Permission Disclosure3'),
-          content: Text('This app requires access to your location to provide accurate results for nearby places.'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Decline'),
-              onPressed: () {
-                Navigator.of(context).pop();
-
-                // Handle user declining location permission
-              },
-            ),
-            TextButton(
-              child: Text('Accept'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                requestLocationPermission();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
   Future<bool> isLocationServiceEnabled() async {
     LocationPermission permission = await _geolocatorPlatform.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -168,29 +122,61 @@ class _UserScreenState extends State<UserScreen> with WidgetsBindingObserver {
     } else if (status.isDenied) {
       // Handle case when user denies the location permission request
       _isLocationEnabled = false;
-      showDialog(
-          context: context,
-          builder: (BuildContext context) => AlertDialog(
-            title: const Text('Location Permission'),
-            content: const Text('Please enable location services all the time'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('CANCEL'),
-              ),
-              TextButton(
-                onPressed: () => _openAppSettings(),
-                child: const Text('SETTINGS'),
-              ),
-            ],
-          ),);
+      if(Platform.isIOS){
+        showLocationPermissionDialogCupertino(context);
+      }else{
+        showDialog(
+            context: context,
+            builder: (BuildContext context) => AlertDialog(
+              title: const Text('Location Permission'),
+              content: const Text('Please enable location services all the time'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('CANCEL'),
+                ),
+                TextButton(
+                  onPressed: () => _openAppSettings(),
+                  child: const Text('SETTINGS'),
+                ),
+              ],
+            ),);
+      }
+
+
     } else if (status.isPermanentlyDenied) {
       showLocationPermanentlyDeniedDialog();
       // Handle case when user permanently denies the location permission request
     }
   }
 
-
+  void showLocationPermissionDialogCupertino(BuildContext context) {
+    showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title:const Text('This Feature requires access to the Location Permission'),
+          content: const Text("We use your location data to provide personalized recommendations and improve your experience"),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            CupertinoDialogAction(
+              child: Text('Open Sttings'),
+              onPressed: () {
+                _openAppSettings();
+                Navigator.of(context).pop();
+                // Open device settings.
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
   void showLocationPermanentlyDeniedDialog() {
     showDialog(
       context: context,
@@ -202,13 +188,7 @@ Location permission has been permanently denied. Please go to the app settings a
 Work tracker collects location data to show place on a map even when the app is closed or not in use.'''),
           actions: <Widget>[
             TextButton(
-              child:const Text('Deny'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Turn on'),
+              child: const Text('Next'),
               onPressed: ()async {
                 if(Platform.isIOS){
                  await requestLocationPermission().whenComplete(() =>  Navigator.of(context).pop());
@@ -243,25 +223,168 @@ Work tracker collects location data to show place on a map even when the app is 
           });
     }
   }
+
   Future<void> _getCurrentPosition() async {
+    try {
+      if (Platform.isIOS) {
+        final trackingStatus = await AppTrackingTransparency.trackingAuthorizationStatus;
+        if (trackingStatus == TrackingStatus.notDetermined) {
+          explainTrackingPermission();
+        } else if (trackingStatus == TrackingStatus.authorized) {
+          // The user has already granted tracking permission, proceed to get location.
+          _getCurrentLocation();
+        } else {
+          // The user denied tracking permission. Handle accordingly.
+          showTrackingPermissionDeniedNotification();
+        }
+      } else {
+        // For Android or other platforms, directly get the location.
+        _getCurrentLocation();
+      }
+    } catch (error) {
+      print(error);
+      // Handle location retrieval errors and inform the user.
+      handleLocationError(error);
+    }
+  }
 
-
-      try {
-        final position = await _geolocatorPlatform.getCurrentPosition(
-            locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.high));
-        setState(() {
-          _currentPosition = position;
-          _isLocationEnabled = true;
-        });
-      } catch (error) {
-        print(error);
-        Fluttertoast.showToast(msg: "$error").whenComplete(() =>Future.delayed(Duration(milliseconds: 700),()=> _openLocationSettings()));
-        _isLocationEnabled = false;
+  Future<void> explainTrackingPermission() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Permission Required'),
+          content: Text('To provide location-based services, we need to track your location even when the app is in the background.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                requestTrackingPermission();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+  Future<void> requestTrackingPermission() async {
+    if (Platform.isIOS) {
+      final status = await AppTrackingTransparency.requestTrackingAuthorization();
+      if (status == TrackingStatus.authorized) {
+        // The user has granted tracking permission, proceed with location tracking.
+        _getCurrentLocation();
+      } else {
+        // The user denied tracking permission. Handle accordingly.
+        showTrackingPermissionDeniedNotification();
       }
     }
+    // For Android or other platforms, you may not need this function.
+  }
+  void showTrackingPermissionDeniedNotification() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('This Feature requires access to the Tracking Permission.'),
+        action: SnackBarAction(
+          label: 'Next',
+          onPressed: () {
+            showTrackingPermissionDialog(context);           // Open device settings.
+          },
+        ),
+      ),
+    );
+  }
+  void handleLocationError(error) {
+    print(error);
+    String errorMessage = "An error occurred while fetching location data.";
+    if (Platform.isIOS) {
+      errorMessage = "iOS location error: $error";
+    } else {
+      errorMessage = "Android location error: $error";
+    }
+
+    // Show an error message to the user.
+    Fluttertoast.showToast(msg: errorMessage).whenComplete(() => Future.delayed(Duration(milliseconds: 700), () => _openLocationSettings()));
+
+    _isLocationEnabled = false;
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      final position = await _geolocatorPlatform.getCurrentPosition(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
+      setState(() {
+        _currentPosition = position;
+        _isLocationEnabled = true;
+      });
+    } catch (error) {
+      // Handle location retrieval errors and inform the user.
+      handleLocationError(error);
+    }
+  }
 
 
+  void showTrackingPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Tracking Permission Denied'),
+          content: const Text('This feature requires location tracking permission to work. More detailed explanation here.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Next'),
+              onPressed: () {
+                // Show platform-specific dialog or open settings.
+                showTrackingPermissionDialog(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+  void showTrackingPermissionDialog(BuildContext context) {
+    if (Platform.isIOS) {
+      showTrackingPermissionDeniedDialogCupertino(context);
+    } else {
+      Navigator.of(context).pop();
+      AppSettings.openAppSettings(); // Open device settings.
+    }
+  }
+
+  void showTrackingPermissionDeniedDialogCupertino(BuildContext context) {
+    showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: const Text('This Feature requires access to the Tracking Permission'),
+          content: const Text(' Work tracker collects location data to show places on a map even when the app is closed or not in use. More details here.'),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            CupertinoDialogAction(
+              child: Text('Open Settings'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                AppSettings.openAppSettings(); // Open device settings.
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   _loadData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -274,7 +397,8 @@ Work tracker collects location data to show place on a map even when the app is 
       final difference = parsedWorkTime.difference(dateNow).inMilliseconds;
       _stopWatchTimer.setPresetTime(mSec: difference.abs());
       _checkPermission();
-    }else if(!isLocationEnabled){
+    }else
+      if(isLocationEnabled){
       showLocationPermanentlyDeniedDialog();
     }
   }

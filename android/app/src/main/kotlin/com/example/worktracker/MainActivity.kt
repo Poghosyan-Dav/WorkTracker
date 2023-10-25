@@ -1,4 +1,4 @@
-package com.worktracker.worktracker
+package com.valpaint.worktracker
 
 import io.flutter.embedding.android.FlutterActivity
 
