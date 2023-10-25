@@ -2,23 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Worktracker</string>
-	<key>CFBundleDocumentTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeName</key>
-			<string>MKDirectionsRequest</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>com.apple.maps.directionsrequest</string>
-			</array>
-		</dict>
-	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -37,10 +30,18 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>MKDirectionsApplicationSupportedModes</key>
-	<array>
-		<string>MKDirectionsModeRideShare</string>
-	</array>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>Explanation for why your app needs access to Apple Music.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Explanation for why your app needs Bluetooth access.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>We need Bluetooth access to connect to nearby devices for sharing data and improving the user experience.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>We need access to your calendar to schedule events and reminders within our app, ensuring you never miss an important task.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Contact access is required to simplify the process of sharing and connecting with your friends, colleagues, and other users in our app.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Always and when in use!</string>
 	<key>NSLocationAlwaysUsageDescription</key>
@@ -51,11 +52,19 @@
 		<string>The example App requires temporary access to the device's precise location.</string>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs access to location when open.</string>
+	<string>To see maps for automatically tracked activities, allow Work Tracker to use your location all of the time.\n
+            Work tracker collects location data to show place on a map even when the app is closed or not in use.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>We require motion data access to provide enhanced fitness tracking and improve the accuracy of activity tracking.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>To enable voice commands and speech recognition, we need access to your device's microphone for a more interactive user experience.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>We use your data to provide personalized ads for a better experience.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
+		<string>fetch</string>
 		<string>processing</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
@@ -77,6 +86,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>UISupportsDocumentBrowser</key>
+	<true/>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
 </dict>
