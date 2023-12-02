@@ -1,6 +1,4 @@
 
-
-
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
@@ -102,7 +100,7 @@ class MyTaskHandler extends TaskHandler {
     );
 
     Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
+        desiredAccuracy: LocationAccuracy.bestForNavigation);
     UserLocation userLocation = UserLocation(
         lat: position.latitude.toString(),
         lng: position.longitude.toString());
@@ -196,8 +194,8 @@ class HomeScreenState extends State<HomeScreen> {
         channelName: 'Foreground Notification',
         channelDescription:
         'This notification appears when the foreground service is running.',
-        channelImportance: NotificationChannelImportance.LOW,
-        priority: NotificationPriority.LOW,
+        channelImportance: NotificationChannelImportance.MAX,
+        priority: NotificationPriority.MAX,
         iconData: const NotificationIconData(
           resType: ResourceType.mipmap,
           resPrefix: ResourcePrefix.ic,
@@ -210,7 +208,7 @@ class HomeScreenState extends State<HomeScreen> {
         playSound: false,
       ),
       foregroundTaskOptions: const ForegroundTaskOptions(
-        interval: 300000,
+        interval: 10000,
         isOnceEvent: false,
         autoRunOnBoot: true,
         allowWakeLock: true,
