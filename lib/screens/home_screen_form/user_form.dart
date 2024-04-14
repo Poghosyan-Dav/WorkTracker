@@ -328,7 +328,8 @@ Work tracker collects location data to show place on a map even when the app is 
   Future<bool> _getCurrentLocation() async {
     try {
       final position = await _geolocatorPlatform.getCurrentPosition(
-          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
+          //locationSettings: const LocationSettings(accuracy: LocationAccuracy.high)
+      );
       setState(() {
         _currentPosition = position;
       });
@@ -477,10 +478,7 @@ Work tracker collects location data to show place on a map even when the app is 
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue ),
 
-                  onPressed: ()async{
-                    // await MyLocationPlugin.initialize();
-                    // await MyLocationPlugin.startLocationUpdates();
-                  },
+                  onPressed: _startTimer,
                   child: const Text(
                     'Start',
                     style: TextStyle(color: Colors.white),

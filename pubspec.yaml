@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+5
+version: 1.0.0+6
 
 environment:
   sdk: '>=2.19.0 <3.0.0'
@@ -30,8 +30,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  my_location_plugin:
-    path: ./my_location_plugin
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -58,11 +56,11 @@ dependencies:
   rxdart: ^0.27.5
   animated_theme_switcher: ^2.0.7
   flutter_slidable: ^3.0.0
-  geolocator: ^10.1.0
+  geolocator: ^7.7.0
   geocoding: ^2.0.5
   google_maps_flutter: ^2.2.1
   location: ^5.0.3
-  flutter_foreground_task: ^6.1.2
+  flutter_foreground_task: ^6.1.3
   intl: ^0.18.0
   flutter_native_splash: ^2.2.12
   bloc: ^8.1.2

@@ -208,7 +208,7 @@ class HomeScreenState extends State<HomeScreen> {
         playSound: false,
       ),
       foregroundTaskOptions: const ForegroundTaskOptions(
-        interval: 10000,
+        interval: 300000,
         isOnceEvent: false,
         autoRunOnBoot: true,
         allowWakeLock: true,
