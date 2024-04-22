@@ -32,7 +32,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
    date = formatter.format(now);
-    _futureUsers = _userDataProvider.getUserInfo(firstCall: 'http://165.227.204.177/api/info?date');
+    _futureUsers = _userDataProvider.getUserInfo(firstCall: 'https://phplaravel-1129724-3949044.cloudwaysapps.com/api/info?date');
     super.initState();
   }
 
