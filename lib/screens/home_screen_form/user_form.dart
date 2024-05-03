@@ -58,7 +58,7 @@ class _UserScreenState extends State<UserScreen> with WidgetsBindingObserver {
 
     _stopWatchTimer.rawTime.listen((value) {
       if (kDebugMode) {
-        // print('rawTime $value ${StopWatchTimer.getDisplayTime(value)}');
+
         setState(() {
           stopedTimerData = StopWatchTimer.getDisplayTime(value);
 
@@ -74,21 +74,24 @@ class _UserScreenState extends State<UserScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.detached) {
-      // App is in the foreground
+      if(_stopWatchTimer.isRunning){
+        // App is in the foreground
         final prefs = await SharedPreferences.getInstance();
         final savedWorkTime = prefs.getString('work_time') ?? '';
         if (savedWorkTime.isNotEmpty) {
-        // Calculate time elapsed since the app was last opened
-        final currentTime = DateTime.now();
-        final parsedWorkTime = DateTime.parse(savedWorkTime);
+          // Calculate time elapsed since the app was last opened
+          final currentTime = DateTime.now();
+          final parsedWorkTime = DateTime.parse(savedWorkTime);
 
-        final timeElapsed = currentTime.difference(parsedWorkTime);
-        final savedTime = _stopWatchTimer.rawTime.value;
-        final updatedTime = savedTime + timeElapsed.inMilliseconds;
+          final timeElapsed = currentTime.difference(parsedWorkTime);
+          final savedTime = _stopWatchTimer.rawTime.value;
+          final updatedTime = savedTime + timeElapsed.inMilliseconds;
 
-        // Update the stopwatch timer
-        _stopWatchTimer.setPresetTime(mSec: updatedTime);
+          // Update the stopwatch timer
+          _stopWatchTimer.setPresetTime(mSec: updatedTime);
         }
+
+      }
     }
   }
 
@@ -101,7 +104,7 @@ class _UserScreenState extends State<UserScreen> with WidgetsBindingObserver {
     } else {
 
       showLocationPermanentlyDeniedDialog();
-     _isLocationEnabled = isLocationEnabled;
+      _isLocationEnabled = isLocationEnabled;
     }
   }
 
@@ -114,33 +117,34 @@ class _UserScreenState extends State<UserScreen> with WidgetsBindingObserver {
     bool serviceEnabled = await _geolocatorPlatform.isLocationServiceEnabled();
     return serviceEnabled;
   }
-  Future<void> requestLocationPermission() async {
+  Future<bool> requestLocationPermission() async {
+    bool isTrue = false;
+
     var status = await handler.Permission.locationWhenInUse.request();
 
     if (status.isGranted) {
-      _getCurrentPosition();
+      isTrue =  await   _getCurrentPosition();
     } else if (status.isDenied) {
-      // Handle case when user denies the location permission request
-      _isLocationEnabled = false;
+
       if(Platform.isIOS){
         showLocationPermissionDialogCupertino(context);
       }else{
         showDialog(
-            context: context,
-            builder: (BuildContext context) => AlertDialog(
-              title: const Text('Location Permission'),
-              content: const Text('Please enable location services all the time'),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('CANCEL'),
-                ),
-                TextButton(
-                  onPressed: () => _openAppSettings(),
-                  child: const Text('SETTINGS'),
-                ),
-              ],
-            ),);
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('Location Permission'),
+            content: const Text('Please enable location services all the time'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('CANCEL'),
+              ),
+              TextButton(
+                onPressed: () => _openAppSettings(),
+                child: const Text('SETTINGS'),
+              ),
+            ],
+          ),);
       }
 
 
@@ -148,6 +152,7 @@ class _UserScreenState extends State<UserScreen> with WidgetsBindingObserver {
       showLocationPermanentlyDeniedDialog();
       // Handle case when user permanently denies the location permission request
     }
+    return isTrue;
   }
 
   void showLocationPermissionDialogCupertino(BuildContext context) {
@@ -191,7 +196,7 @@ Work tracker collects location data to show place on a map even when the app is 
               child: const Text('Next'),
               onPressed: ()async {
                 if(Platform.isIOS){
-                 await requestLocationPermission().whenComplete(() =>  Navigator.of(context).pop());
+                  await requestLocationPermission().whenComplete(() =>  Navigator.of(context).pop());
                 }else {
                   await _getCurrentPosition().whenComplete(() =>  Navigator.of(context).pop());
                 }
@@ -214,7 +219,7 @@ Work tracker collects location data to show place on a map even when the app is 
 
             if (serviceStatus == ServiceStatus.disabled) {
               await  HomeScreenState().stopForegroundTask();
-            await  _saveData();
+              await  _saveData();
               _stopWatchTimer.onStopTimer();
 
 
@@ -224,7 +229,8 @@ Work tracker collects location data to show place on a map even when the app is 
     }
   }
 
-  Future<void> _getCurrentPosition() async {
+  Future<bool> _getCurrentPosition() async {
+    bool isTrue = false;
     try {
       if (Platform.isIOS) {
         final trackingStatus = await AppTrackingTransparency.trackingAuthorizationStatus;
@@ -232,20 +238,23 @@ Work tracker collects location data to show place on a map even when the app is 
           explainTrackingPermission();
         } else if (trackingStatus == TrackingStatus.authorized) {
           // The user has already granted tracking permission, proceed to get location.
-          _getCurrentLocation();
+          isTrue =  await    _getCurrentLocation();
         } else {
           // The user denied tracking permission. Handle accordingly.
           showTrackingPermissionDeniedNotification();
         }
       } else {
         // For Android or other platforms, directly get the location.
-        _getCurrentLocation();
+        isTrue =  await    _getCurrentLocation();
       }
     } catch (error) {
       print(error);
+      isTrue = false;
       // Handle location retrieval errors and inform the user.
       handleLocationError(error);
     }
+    return isTrue;
+
   }
 
   Future<void> explainTrackingPermission() async {
@@ -315,17 +324,19 @@ Work tracker collects location data to show place on a map even when the app is 
     _isLocationEnabled = false;
   }
 
-  Future<void> _getCurrentLocation() async {
+  Future<bool> _getCurrentLocation() async {
     try {
       final position = await _geolocatorPlatform.getCurrentPosition(
           locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
       setState(() {
         _currentPosition = position;
-        _isLocationEnabled = true;
       });
+      return   true;
     } catch (error) {
       // Handle location retrieval errors and inform the user.
       handleLocationError(error);
+      return false;
+
     }
   }
 
@@ -390,7 +401,6 @@ Work tracker collects location data to show place on a map even when the app is 
     final prefs = await SharedPreferences.getInstance();
     final savedWorkTime = prefs.getString('work_time') ?? '';
     bool isLocationEnabled = await isLocationServiceEnabled();
-
     if (savedWorkTime.isNotEmpty) {
       final parsedWorkTime = DateTime.parse(savedWorkTime);
       final dateNow = DateTime.now();
@@ -398,7 +408,7 @@ Work tracker collects location data to show place on a map even when the app is 
       _stopWatchTimer.setPresetTime(mSec: difference.abs());
       _checkPermission();
     }else
-      if(isLocationEnabled){
+    if(isLocationEnabled){
       showLocationPermanentlyDeniedDialog();
     }
   }
@@ -449,49 +459,49 @@ Work tracker collects location data to show place on a map even when the app is 
         ),
 
         body:  Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: 32,
-        horizontal: 16,
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          _getRadialGauge(),
-          Row(
+          padding: const EdgeInsets.symmetric(
+            vertical: 32,
+            horizontal: 16,
+          ),
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              !_stopWatchTimer.isRunning ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue ),
+              _getRadialGauge(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  !_stopWatchTimer.isRunning ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue ),
 
-                  onPressed: _startTimer,
-                  child: const Text(
-                    'Start',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ): const SizedBox(),
+                      onPressed:timerOn ? null: _startTimer,
+                      child:const Text(
+                        'Start',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ): const SizedBox(),
 
-              _stopWatchTimer.isRunning ?   Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child:ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.lightGreen ),
+                  _stopWatchTimer.isRunning ?   Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child:ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.lightGreen ),
 
-                  onPressed:_stopTimer,
-                  child: const Text(
-                    'Stop',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ) :const SizedBox(),
+                      onPressed:timerOn ? null: _stopTimer,
+                      child: const Text(
+                        'Stop',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ) :const SizedBox(),
 
+                ],
+              ),
             ],
           ),
-        ],
-      ),
-    )));
+        )));
   }
   Widget _getRadialGauge() {
     return SfRadialGauge(
@@ -531,7 +541,7 @@ Work tracker collects location data to show place on a map even when the app is 
     ;
   }
   Future<void> _checkPermission() async {
-    await _getCurrentPosition();
+    _isLocationEnabled =  await _getCurrentPosition();
 
     if (!_isLocationEnabled) {
       return;
@@ -593,9 +603,16 @@ Work tracker collects location data to show place on a map even when the app is 
   }
 
   Future<void> _startTimer() async {
-    await _getCurrentPosition();
+    setState(() {
+      timerOn = true;
+    });
+
+    _isLocationEnabled =  await requestLocationPermission();
 
     if (!_isLocationEnabled) {
+      setState(() {
+        timerOn = false;
+      });
       return;
     }
 
@@ -617,7 +634,9 @@ Work tracker collects location data to show place on a map even when the app is 
           ),
         ).then((value) => FlutterForegroundTask.openSystemAlertWindowSettings());
       }
-
+      setState(() {
+        timerOn = false;
+      });
       return;
     }
 
@@ -639,12 +658,24 @@ Work tracker collects location data to show place on a map even when the app is 
 
       _userActionsProvider.fetchUserActions(action);
     }
+    setState(() {
+      timerOn = false;
+    });
+
   }
 
 
   Future<void> _stopTimer() async {
-    await _getCurrentPosition();
-    if (!_isLocationEnabled) return;
+    setState(() {
+      timerOn = true;
+    });
+    _isLocationEnabled =    await _getCurrentPosition();
+    if (!_isLocationEnabled){
+      setState(() {
+        timerOn = false;
+      });
+      return;
+    }
 
     if (!await FlutterForegroundTask.canDrawOverlays) {
       if (context.mounted) {
@@ -664,6 +695,9 @@ Work tracker collects location data to show place on a map even when the app is 
           ),
         );
       }
+      setState(() {
+        timerOn = false;
+      });
       return;
     }
 
@@ -682,6 +716,9 @@ Work tracker collects location data to show place on a map even when the app is 
       );
       _userActionsProvider.fetchUserActions(action);
     }
+    setState(() {
+      timerOn = false;
+    });
   }
 
   void _handleClick(int item) {
@@ -691,7 +728,7 @@ Work tracker collects location data to show place on a map even when the app is 
         break;
       case 1:
         _openAppSettings();
-            break;
+        break;
       case 2:
         _sessionDataProvider.deleteAllToken();
         context.read<LoginCubit>().logOut();

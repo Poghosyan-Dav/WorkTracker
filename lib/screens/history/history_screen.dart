@@ -32,7 +32,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
    date = formatter.format(now);
-    _futureUsers = _userDataProvider.getUserInfo(firstCall: 'http://165.227.204.177/api/info?date');
+    _futureUsers = _userDataProvider.getUserInfo(firstCall: 'https://phplaravel-1129724-3949044.cloudwaysapps.com/api/info?date');
     super.initState();
   }
 
@@ -166,7 +166,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
      //final DateTime now = DateTime. now();
      //final DateFormat formatter = DateFormat('yyyy-MM-dd');
     //final String newDate = formatter. format(now);
-    List<UserInfo> freshNumbers = await _userDataProvider.getUserInfo(firstCall: 'https://phplaravel-885408-3069483.cloudwaysapps.com/api/info?date=');
+    List<UserInfo> freshNumbers = await _userDataProvider.getUserInfo(firstCall: 'https://phplaravel-1129724-3949044.cloudwaysapps.com/api/info?date=');
     setState(() {
       _futureUsers = Future.value(freshNumbers);
     });

@@ -38,7 +38,7 @@ class _MyPageState extends State<MyPage> {
       isLoading = true;
     });
 
-    final url = _hasDate ? 'http://165.227.204.177/api/info?date=${_date['startDate']}' : 'http://165.227.204.177/api/info?page=$currentPage';
+    final url = _hasDate ? 'https://phplaravel-1129724-3949044.cloudwaysapps.com/api/info?date=${_date['startDate']}' : 'https://phplaravel-1129724-3949044.cloudwaysapps.com/api/info?page=$currentPage';
     final response = await http.get(Uri.parse(url)); // Replace with your API endpoint
     final dataList = jsonDecode(response.body)['data'];
     final currentPg = jsonDecode(response.body)['current_page'];
