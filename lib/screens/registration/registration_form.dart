@@ -231,7 +231,7 @@ class _PasswordInputState extends State<PasswordInput> {
                 ),
               ),
             ),
-            errorText: state.password.invalid ? 'Գաղտնաբառը հուսալի չէ' : null,
+            errorText: state.password.invalid ? 'minimum 4 character' : null,
           ),
           obscureText: isHiddenPassword,
           onChanged: (password) =>
@@ -298,8 +298,6 @@ class _DropRolButtonState extends State<DropRolButton> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<RegisterCubit>().roleChanged(dropdownvalue.toLowerCase());
-
     return DropdownButton(
       value: dropdownvalue,
       icon: const Icon(Icons.keyboard_arrow_down),
