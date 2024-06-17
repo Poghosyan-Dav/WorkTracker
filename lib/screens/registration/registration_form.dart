@@ -298,7 +298,6 @@ class _DropRolButtonState extends State<DropRolButton> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<RegisterCubit>().roleChanged(dropdownvalue.toLowerCase());
 
     return DropdownButton(
       value: dropdownvalue,
